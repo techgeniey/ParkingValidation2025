@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>주차 유효성 검증 - Parking Validation</title>
+    <title>주차 등록 검색 - Parking Validation</title>
     <style>
         * {
             margin: 0;
@@ -274,6 +274,103 @@
             font-size: 11px;
         }
 
+        /* Authentication Styles */
+        .login-container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .login-container h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .login-container p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .google-signin-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            color: #444;
+            border: 2px solid #4285f4;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .google-signin-btn:hover {
+            background: #4285f4;
+            color: white;
+            box-shadow: 0 4px 8px rgba(66, 133, 244, 0.3);
+        }
+
+        .google-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .user-email {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .app-content {
+            display: none;
+        }
+
+        .app-content.visible {
+            display: block;
+        }
+
+        .login-screen {
+            display: none;
+        }
+
+        .login-screen.visible {
+            display: block;
+        }
+
         @media (max-width: 480px) {
             h1 {
                 font-size: 22px;
@@ -295,6 +392,15 @@
             .status {
                 font-size: 14px;
             }
+
+            .login-container {
+                padding: 30px 20px;
+            }
+
+            .user-info {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
     </style>
 </head>
@@ -302,7 +408,33 @@
     <div class="container">
         <h1>🚗 주차 유효성 검증</h1>
 
-        <div class="search-box">
+        <!-- Login Screen -->
+        <div class="login-screen" id="loginScreen">
+            <div class="login-container">
+                <h2>로그인 필요</h2>
+                <p>주차 유효성 검증 시스템에 접근하려면<br>Google 계정으로 로그인하세요.</p>
+                <button class="google-signin-btn" id="googleSignInBtn">
+                    <svg class="google-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                        <path fill="none" d="M0 0h48v48H0z"/>
+                    </svg>
+                    Google로 로그인
+                </button>
+            </div>
+        </div>
+
+        <!-- App Content (Hidden until logged in) -->
+        <div class="app-content" id="appContent">
+            <!-- User Info Bar -->
+            <div class="user-info" id="userInfo">
+                <span class="user-email" id="userEmail"></span>
+                <button class="logout-btn" id="logoutBtn">로그아웃</button>
+            </div>
+
+            <div class="search-box">
             <div class="input-group">
                 <label for="searchInput">차량번호 뒷 4자리 입력</label>
                 <input
@@ -346,6 +478,7 @@
                 총 <span id="recordCount">0</span>건의 데이터
             </div>
         </div>
+        </div><!-- End app-content -->
     </div>
 
     <!-- Firebase SDK -->
@@ -353,23 +486,35 @@
         // Import Firebase modules
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getDatabase, ref, onValue, get } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+        import { getAuth, signInWithPopup, signOut, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
         // ============================================
         // FIREBASE CONFIGURATION - UPDATE THIS!
         // ============================================
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "your-project.firebaseapp.com",
-            databaseURL: "https://your-project.firebaseio.com",
-            projectId: "your-project",
-            storageBucket: "your-project.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:abc123"
+            apiKey: "AIzaSyDuSPZ-3f0bsS9SjrHJx9BtglbkkPi8yKY",
+            authDomain: "parking-validation-5fe17.firebaseapp.com",
+            databaseURL: "https://parking-validation-5fe17-default-rtdb.firebaseio.com",
+            projectId: "parking-validation-5fe17",
+            storageBucket: "parking-validation-5fe17.firebasestorage.app",
+            messagingSenderId: "574605771807",
+            appId: "1:574605771807:web:c746340352b61004e2c12a"
         };
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
+        const auth = getAuth(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        // ============================================
+        // EMAIL WHITELIST - Authorized Users Only
+        // ============================================
+        const ALLOWED_EMAILS = [
+            'taejin.yoon@gmail.com',
+            'finespaceinc@gmail.com',
+            'jproltd@gmail.com'
+        ];
 
         // Global state
         let allData = [];
@@ -388,10 +533,17 @@
         const lastUpdate = document.getElementById('lastUpdate');
         const recordCount = document.getElementById('recordCount');
 
+        // Auth DOM elements
+        const loginScreen = document.getElementById('loginScreen');
+        const appContent = document.getElementById('appContent');
+        const googleSignInBtn = document.getElementById('googleSignInBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userEmail = document.getElementById('userEmail');
+
         // Initialize app
         window.addEventListener('DOMContentLoaded', () => {
+            setupAuthListeners();
             setupEventListeners();
-            setupFirebaseListeners();
         });
 
         function setupEventListeners() {
@@ -593,6 +745,88 @@
             const div = document.createElement('div');
             div.textContent = String(text);
             return div.innerHTML;
+        }
+
+        // ============================================
+        // AUTHENTICATION FUNCTIONS
+        // ============================================
+
+        function setupAuthListeners() {
+            // Set up button event listeners
+            googleSignInBtn.addEventListener('click', handleGoogleSignIn);
+            logoutBtn.addEventListener('click', handleSignOut);
+
+            // Listen to authentication state changes
+            onAuthStateChanged(auth, (user) => {
+                if (user && ALLOWED_EMAILS.includes(user.email)) {
+                    // User is signed in and authorized
+                    console.log('User signed in:', user.email);
+                    showApp(user);
+                    setupFirebaseListeners(); // Initialize data listeners
+                } else if (user) {
+                    // User is signed in but NOT authorized
+                    console.warn('Unauthorized user attempted access:', user.email);
+                    alert('접근 권한이 없습니다.\n\n허가된 계정으로 로그인해주세요.');
+                    handleSignOut();
+                } else {
+                    // User is signed out
+                    console.log('User signed out');
+                    showLogin();
+                }
+            });
+        }
+
+        async function handleGoogleSignIn() {
+            try {
+                googleSignInBtn.disabled = true;
+                googleSignInBtn.textContent = '로그인 중...';
+
+                const result = await signInWithPopup(auth, googleProvider);
+                const user = result.user;
+
+                console.log('Sign-in successful:', user.email);
+
+                // Auth state listener will handle the rest
+            } catch (error) {
+                console.error('Sign-in error:', error);
+
+                let errorMessage = '로그인 중 오류가 발생했습니다.';
+
+                if (error.code === 'auth/popup-closed-by-user') {
+                    errorMessage = '로그인이 취소되었습니다.';
+                } else if (error.code === 'auth/popup-blocked') {
+                    errorMessage = '팝업이 차단되었습니다. 팝업 차단을 해제해주세요.';
+                } else if (error.code === 'auth/network-request-failed') {
+                    errorMessage = '네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.';
+                }
+
+                alert(errorMessage);
+
+                // Re-enable button
+                googleSignInBtn.disabled = false;
+                googleSignInBtn.innerHTML = '<svg class="google-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg> Google로 로그인';
+            }
+        }
+
+        async function handleSignOut() {
+            try {
+                await signOut(auth);
+                console.log('User signed out successfully');
+            } catch (error) {
+                console.error('Sign-out error:', error);
+                alert('로그아웃 중 오류가 발생했습니다.');
+            }
+        }
+
+        function showApp(user) {
+            loginScreen.classList.remove('visible');
+            appContent.classList.add('visible');
+            userEmail.textContent = user.email;
+        }
+
+        function showLogin() {
+            appContent.classList.remove('visible');
+            loginScreen.classList.add('visible');
         }
 
         // Make some functions globally accessible for debugging
