@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 등록 보기</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 800px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #1c1e21; }
+        .login-screen, .app-content { display: none; }
+        .login-screen.visible, .app-content.visible { display: block; }
+        .google-signin-btn { background: #4285F4; color: white; padding: 10px 15px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
+        .logout-btn { background: #f44336; color: white; padding: 8px 12px; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; float: right; }
+        .user-info { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
+        #fetchBtn { background: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
+        .results { margin-top: 20px; }
+        .record { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+        .record:last-child { border-bottom: none; }
+        .record .status-valid { color: #2196F3; font-weight: bold; }
+        .record .status-invalid { color: #f44336; font-weight: bold; }
+        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>내 등록 보기</h1>
+
+        <div id="loginScreen" class="login-screen">
+            <h2>로그인 필요</h2>
+            <p>제출한 등록 내역을 보려면 Google 계정으로 로그인하세요.</p>
+            <button id="googleSignInBtn" class="google-signin-btn">Google로 로그인</button>
+        </div>
+
+        <div id="appContent" class="app-content">
+            <div class="user-info">
+                <span id="userEmail"></span>
+                <button id="logoutBtn" class="logout-btn">로그아웃</button>
+            </div>
+
+            <button id="fetchBtn">내 등록 내역 불러오기</button>
+            
+            <div id="loading" style="display: none;"><div class="spinner"></div></div>
+            <div id="results" class="results"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithPopup, signOut, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDuSPZ-3f0bsS9SjrHJx9BtglbkkPi8yKY",
+            authDomain: "parking-validation-5fe17.firebaseapp.com",
+            projectId: "parking-validation-5fe17",
+            storageBucket: "parking-validation-5fe17.firebasestorage.app",
+            messagingSenderId: "574605771807",
+            appId: "1:574605771807:web:c746340352b61004e2c12a"
+        };
+
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwgUApCUMvxpltIFua3bymbDT0CUHUGLRe-Ge6jkCBaoRfTFwZtbfA-Fb04k6McZGV4IA/exec';
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        const loginScreen = document.getElementById('loginScreen');
+        const appContent = document.getElementById('appContent');
+        const googleSignInBtn = document.getElementById('googleSignInBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userEmail = document.getElementById('userEmail');
+        const fetchBtn = document.getElementById('fetchBtn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                showApp(user);
+            } else {
+                showLogin();
+            }
+        });
+
+        googleSignInBtn.addEventListener('click', () => signInWithPopup(auth, googleProvider));
+        logoutBtn.addEventListener('click', () => signOut(auth));
+
+        function showApp(user) {
+            loginScreen.classList.remove('visible');
+            appContent.classList.add('visible');
+            userEmail.textContent = `사용자: ${user.email}`;
+        }
+
+        function showLogin() {
+            appContent.classList.remove('visible');
+            loginScreen.classList.add('visible');
+        }
+
+        fetchBtn.addEventListener('click', async () => {
+            loading.style.display = 'block';
+            results.innerHTML = '';
+
+            const user = auth.currentUser;
+            if (!user) {
+                alert('로그인이 필요합니다.');
+                loading.style.display = 'none';
+                return;
+            }
+
+            const url = `${SCRIPT_URL}?user_id=${encodeURIComponent(user.email)}`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok: ${response.statusText}`);
+                }
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.message);
+                }
+
+                displayResults(data);
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                results.innerHTML = `<p style="color: red;">데이터를 불러오는 중 오류가 발생했습니다: ${error.message}</p>`;
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        function displayResults(data) {
+            if (data.length === 0) {
+                results.innerHTML = '<p>해당 이메일로 제출된 등록 내역이 없습니다.</p>';
+                return;
+            }
+
+            let html = `<h2>총 ${data.length}개의 등록 내역</h2>`;
+            data.forEach(item => {
+                const statusClass = (item.status === '유효' || item.status === '직원차량') ? 'status-valid' : 'status-invalid';
+                html += `
+                    <div class="record">
+                        <span>${item.licensePlate}</span>
+                        <span class="${statusClass}">${item.status || '무효'}</span>
+                    </div>
+                `;
+            });
+            results.innerHTML = html;
+        }
+
+    </script>
+</body>
+</html>
