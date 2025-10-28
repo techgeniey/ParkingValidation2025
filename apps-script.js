@@ -281,12 +281,8 @@ function doGet(e) {
     results = { error: true, message: error.message };
   }
 
-  // Set CORS headers
   return ContentService.createTextOutput(JSON.stringify(results))
     .setMimeType(ContentService.MimeType.JSON)
-    .withHeaders({
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
-    });
+    .addHeader('Access-Control-Allow-Origin', '*')
+    .addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 }
