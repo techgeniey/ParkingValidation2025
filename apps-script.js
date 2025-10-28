@@ -281,8 +281,23 @@ function doGet(e) {
     results = { error: true, message: error.message };
   }
 
-  return ContentService.createTextOutput(JSON.stringify(results))
-    .setMimeType(ContentService.MimeType.JSON)
-    .addHeader('Access-Control-Allow-Origin', '*')
-    .addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  const output = ContentService.createTextOutput(JSON.stringify(results))
+    .setMimeType(ContentService.MimeType.JSON);
+
+  const response = HtmlService.createHtmlOutput().setContent(output.getContent());
+  response.addHeader('Access-Control-Allow-Origin', '*');
+  response.addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.addHeader('Access-Control-Allow-Headers', 'Content-Type');
+  return response;
+}
+
+/**
+ * Handles HTTP OPTIONS requests for CORS preflight.
+ */
+function doOptions() {
+  const response = HtmlService.createHtmlOutput().setContent('');
+  response.addHeader('Access-Control-Allow-Origin', '*');
+  response.addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.addHeader('Access-Control-Allow-Headers', 'Content-Type');
+  return response;
 }
