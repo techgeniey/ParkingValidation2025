@@ -50,9 +50,10 @@ function syncToFirebase() {
     // Find column indices
     const licensePlateCol = headers.indexOf('LicensePlate');
     const statusCol = headers.indexOf('Status');
+    const userIdCol = headers.indexOf('UserID');
 
-    if (licensePlateCol === -1 || statusCol === -1) {
-      throw new Error('Required columns "LicensePlate" and "Status" not found!');
+    if (licensePlateCol === -1 || statusCol === -1 || userIdCol === -1) {
+      throw new Error('Required columns "LicensePlate", "Status", and "UserID" not found!');
     }
 
     // Process each row (skip header)
@@ -60,11 +61,13 @@ function syncToFirebase() {
       const row = values[i];
       const licensePlate = String(row[licensePlateCol] || '').trim();
       const status = String(row[statusCol] || '').trim();
+      const userId = String(row[userIdCol] || '').trim();
 
       if (licensePlate) {
         validations.push({
           licensePlate: licensePlate,
           status: status,
+          userId: userId,
           rowIndex: i + 1, // 1-based row number
           lastUpdated: new Date().toISOString()
         });

@@ -49,20 +49,21 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
         import { getAuth, signInWithPopup, signOut, GoogleAuthProvider, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getDatabase, ref, query, orderByChild, equalTo, get } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyDuSPZ-3f0bsS9SjrHJx9BtglbkkPi8yKY",
             authDomain: "parking-validation-5fe17.firebaseapp.com",
+            databaseURL: "https://parking-validation-5fe17-default-rtdb.firebaseio.com",
             projectId: "parking-validation-5fe17",
             storageBucket: "parking-validation-5fe17.firebasestorage.app",
             messagingSenderId: "574605771807",
             appId: "1:574605771807:web:c746340352b61004e2c12a"
         };
 
-        const SCRIPT_URL =  'https://script.google.com/macros/s/AKfycbxWxL3AqKfEMlihocCoKME_4ZFvcvuDS_AoesyIhGzEN8bDyyKucd5fHx_JIVdnpKGUzw/exec'
-                            //'https://script.google.com/macros/s/AKfycbwgUApCUMvxpltIFua3bymbDT0CUHUGLRe-Ge6jkCBaoRfTFwZtbfA-Fb04k6McZGV4IA/exec';
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const database = getDatabase(app);
         const googleProvider = new GoogleAuthProvider();
 
         const loginScreen = document.getElementById('loginScreen');
@@ -107,20 +108,21 @@
                 return;
             }
 
-            const url = `${SCRIPT_URL}?user_id=${encodeURIComponent(user.email)}`;
-
             try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`Network response was not ok: ${response.statusText}`);
-                }
-                const data = await response.json();
+                // Query Firebase for validations matching the user's email
+                const validationsRef = ref(database, 'parkingValidation/validations');
+                const userQuery = query(validationsRef, orderByChild('userId'), equalTo(user.email));
+                const snapshot = await get(userQuery);
 
-                if (data.error) {
-                    throw new Error(data.message);
+                if (!snapshot.exists()) {
+                    displayResults([]);
+                    return;
                 }
 
-                displayResults(data);
+                // Convert Firebase object to array
+                const validationsObj = snapshot.val();
+                const validationsArray = Object.values(validationsObj);
+                displayResults(validationsArray);
 
             } catch (error) {
                 console.error('Error fetching data:', error);
