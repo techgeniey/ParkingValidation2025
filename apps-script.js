@@ -1,8 +1,20 @@
+/*
+ *********************** Firestore handling routine ********************
+ */
 // ============================================
 // FIREBASE CONFIGURATION - UPDATE THESE!
 // ============================================
-const FIREBASE_URL = 'https://your-project.firebaseio.com'; // Your Firebase Realtime Database URL
-const FIREBASE_SECRET = 'YOUR_WEB_API_KEY'; // Your Firebase Web API Key
+const FIREBASE_URL = 'https://parking-validation-5fe17-default-rtdb.firebaseio.com'; // Your Firebase Realtime Database URL
+
+// Requires Apps Script Properties of FiorebaseSecret to be set for the firebase realtime db secret key.
+// To get that console.firebase.google.com -> Project -> Project Settings -> Service Accounts -> Database secrets.
+//
+
+// Get secret from Script Properties (not hardcoded!)
+function getFirebaseSecret() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  return scriptProperties.getProperty('FirebaseSecret');
+}
 
 // Google Sheet configuration
 const SHEET_NAME = 'ValidationsTab';
@@ -87,7 +99,14 @@ function syncToFirebase() {
  * Writes data to Firebase Realtime Database
  */
 function writeToFirebase(data) {
-  const url = `${FIREBASE_URL}/parkingValidation.json?auth=${FIREBASE_SECRET}`;
+  const firebase_secret = getFirebaseSecret(); // Your Firebase Web API Key
+
+  if (!firebase_secret) {
+      Logger.log('ERROR: Firebase secret not found in Script Properties!');
+      return false;
+  }
+
+  const url = `${FIREBASE_URL}/parkingValidation.json?auth=${firebase_secret}`;
 
   const options = {
     method: 'put',
@@ -113,7 +132,13 @@ function writeToFirebase(data) {
  * Updates a timestamp in Firebase to signal data changes
  */
 function updateLastModifiedTimestamp() {
-  const url = `${FIREBASE_URL}/parkingValidation/metadata/lastModified.json?auth=${FIREBASE_SECRET}`;
+  const firebase_secret = getFirebaseSecret(); // Your Firebase Web API Key
+
+  if (!firebase_secret) {
+      Logger.log('ERROR: Firebase secret not found in Script Properties!');
+      return false;
+  }
+  const url = `${FIREBASE_URL}/parkingValidation/metadata/lastModified.json?auth=${firebase_secret}`;
 
   const options = {
     method: 'put',
@@ -133,7 +158,9 @@ function testFirebaseConnection() {
   try {
     Logger.log('Testing Firebase connection...');
 
-    const testUrl = `${FIREBASE_URL}/.json?auth=${FIREBASE_SECRET}`;
+    const firebase_secret = getFirebaseSecret();
+
+    const testUrl = `${FIREBASE_URL}/.json?auth=${firebase_secret}`;
 
     const options = {
       method: 'get',
