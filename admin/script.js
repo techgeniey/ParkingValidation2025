@@ -109,11 +109,14 @@ cleanupBtn.addEventListener('click', async () => {
 
     try {
         const cleanedData = getCleanedData();
+        // Corrected data structure for the 'set' operation
         const dataToUpdate = {
-            'validations': cleanedData,
-            'metadata/totalRecords': cleanedData.length,
-            'metadata/lastSync': new Date().toISOString(),
-            'metadata/lastModified': Date.now()
+            validations: cleanedData,
+            metadata: {
+                totalRecords: cleanedData.length,
+                lastSync: new Date().toISOString(),
+                lastModified: Date.now()
+            }
         };
 
         await set(ref(database, 'parkingValidation'), dataToUpdate);
