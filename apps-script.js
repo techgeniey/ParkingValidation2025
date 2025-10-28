@@ -6,7 +6,7 @@
 // ============================================
 const FIREBASE_URL = 'https://parking-validation-5fe17-default-rtdb.firebaseio.com'; // Your Firebase Realtime Database URL
 
-// Requires Apps Script Properties of FiorebaseSecret to be set for the firebase realtime db secret key.
+// Requires Apps Script Properties of FirebaseSecret to be set for the firebase realtime db secret key.
 // To get that console.firebase.google.com -> Project -> Project Settings -> Service Accounts -> Database secrets.
 //
 
@@ -227,4 +227,66 @@ function manualSync() {
   Logger.log('=== Manual Sync Started ===');
   syncToFirebase();
   Logger.log('=== Manual Sync Completed ===');
+}
+
+/****************************************************************
+ * WEB APP for USER-SPECIFIC DATA
+ * - Deployed as a Web App to be called from the client.
+ * - Returns submissions for a specific UserID.
+ ****************************************************************/
+
+/**
+ * Handles HTTP GET requests to the script.
+ * @param {Object} e - The event parameter containing request details.
+ * e.g. ?user_id=user@example.com
+ * @returns {ContentService.TextOutput} JSON string of user's records.
+ */
+function doGet(e) {
+  let results = [];
+  try {
+    const userId = e.parameter.user_id;
+
+    if (!userId) {
+      throw new Error("user_id parameter is missing.");
+    }
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    if (!sheet) {
+      throw new Error(`Sheet "${SHEET_NAME}" not found.`);
+    }
+
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+
+    const userIdCol = headers.indexOf('UserID');
+    const licensePlateCol = headers.indexOf('LicensePlate');
+    const statusCol = headers.indexOf('Status');
+
+    if (userIdCol === -1 || licensePlateCol === -1 || statusCol === -1) {
+      throw new Error("Required column not found. Ensure 'UserID', 'LicensePlate', and 'Status' columns exist.");
+    }
+
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][userIdCol] == userId) {
+        results.push({
+          licensePlate: data[i][licensePlateCol],
+          status: data[i][statusCol]
+        });
+      }
+    }
+
+  } catch (error) {
+    Logger.log(error.toString());
+    // Return a structured error object
+    results = { error: true, message: error.message };
+  }
+
+  // Set CORS headers
+  return ContentService.createTextOutput(JSON.stringify(results))
+    .setMimeType(ContentService.MimeType.JSON)
+    .withHeaders({
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+    });
 }
