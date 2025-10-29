@@ -20,8 +20,49 @@ function getFirebaseSecret() {
 const SHEET_NAME = 'ValidationsTab';
 
 /**
+ * Clean duplicates helper function
+ * Keeps one record per license plate, preferring:
+ * 1. Valid status over invalid
+ * 2. Permanent (직원차량) over temporary (유효)
+ * 3. Newer records over older (by lastUpdated timestamp)
+ */
+function cleanDuplicates(allData) {
+  const plateMap = new Map();
+
+  allData.forEach(record => {
+    const plate = record.licensePlate;
+    if (!plate) return; // Skip records without a license plate
+
+    const existing = plateMap.get(plate);
+    const isPermanent = record.status === '직원차량';
+    const isValid = record.status === '유효' || isPermanent;
+
+    if (!existing) {
+      plateMap.set(plate, record);
+    } else {
+      const existingIsPermanent = existing.status === '직원차량';
+      const existingIsValid = existing.status === '유효' || existingIsPermanent;
+
+      // Prefer valid over invalid
+      if (isValid && !existingIsValid) {
+        plateMap.set(plate, record);
+      }
+      // If both permanent, prefer newer
+      else if (isPermanent && existingIsPermanent) {
+        if (new Date(record.lastUpdated) > new Date(existing.lastUpdated)) {
+          plateMap.set(plate, record);
+        }
+      }
+    }
+  });
+
+  return Array.from(plateMap.values());
+}
+
+/**
  * Main function to sync Google Sheet data to Firebase
  * Triggered on form submit or can be run manually
+ * Automatically cleans duplicates before syncing
  */
 function syncToFirebase() {
   try {
@@ -76,11 +117,15 @@ function syncToFirebase() {
 
     Logger.log(`Processed ${validations.length} validation records`);
 
+    // Clean duplicates before syncing
+    const cleanedData = cleanDuplicates(validations);
+    Logger.log(`After cleaning: ${validations.length} -> ${cleanedData.length} records (removed ${validations.length - cleanedData.length} duplicates)`);
+
     // Prepare the data structure for Firebase
     const firebaseData = {
-      validations: validations,
+      validations: cleanedData,
       metadata: {
-        totalRecords: validations.length,
+        totalRecords: cleanedData.length,
         lastSync: new Date().toISOString(),
         source: 'google-sheets'
       }
@@ -395,44 +440,4 @@ function forceSyncWithCleaning() {
     SpreadsheetApp.getUi().alert('Error: ' + error.message);
     throw error;
   }
-}
-
-/**
- * Clean duplicates using same logic as admin panel
- * Keeps one record per license plate, preferring:
- * 1. Valid status over invalid
- * 2. Permanent (직원차량) over temporary (유효)
- * 3. Newer records over older (by lastUpdated timestamp)
- */
-function cleanDuplicates(allData) {
-  const plateMap = new Map();
-
-  allData.forEach(record => {
-    const plate = record.licensePlate;
-    if (!plate) return; // Skip records without a license plate
-
-    const existing = plateMap.get(plate);
-    const isPermanent = record.status === '직원차량';
-    const isValid = record.status === '유효' || isPermanent;
-
-    if (!existing) {
-      plateMap.set(plate, record);
-    } else {
-      const existingIsPermanent = existing.status === '직원차량';
-      const existingIsValid = existing.status === '유효' || existingIsPermanent;
-
-      // Prefer valid over invalid
-      if (isValid && !existingIsValid) {
-        plateMap.set(plate, record);
-      }
-      // If both permanent, prefer newer
-      else if (isPermanent && existingIsPermanent) {
-        if (new Date(record.lastUpdated) > new Date(existing.lastUpdated)) {
-          plateMap.set(plate, record);
-        }
-      }
-    }
-  });
-
-  return Array.from(plateMap.values());
 }
