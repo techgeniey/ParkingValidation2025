@@ -287,3 +287,152 @@ function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify(results))
     .setMimeType(ContentService.MimeType.JSON);
 }
+
+/****************************************************************
+ * CUSTOM MENU AND FORCE SYNC WITH CLEANING
+ ****************************************************************/
+
+/**
+ * Creates a custom menu in Google Sheets when the spreadsheet opens
+ */
+function onOpen() {
+  const ui = SpreadsheetApp.getUi();
+  ui.createMenu('🚗 Parking Sync')
+      .addItem('Manual Sync to Firebase', 'manualSync')
+      .addItem('Force Sync with Cleaning', 'forceSyncWithCleaning')
+      .addSeparator()
+      .addItem('Test Firebase Connection', 'testFirebaseConnection')
+      .addToUi();
+}
+
+/**
+ * Force sync from Google Sheets with data cleaning
+ * Removes duplicates and resolves conflicts before syncing to Firebase
+ * COMPLETELY WIPES Firebase and replaces with cleaned Google Sheets data
+ */
+function forceSyncWithCleaning() {
+  try {
+    Logger.log('Starting force sync with cleaning...');
+
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    if (!sheet) {
+      throw new Error(`Sheet "${SHEET_NAME}" not found!`);
+    }
+
+    const dataRange = sheet.getDataRange();
+    const values = dataRange.getValues();
+
+    if (values.length <= 1) {
+      Logger.log('No data to sync (only header row exists)');
+      SpreadsheetApp.getUi().alert('No data to sync');
+      return;
+    }
+
+    const headers = values[0];
+    const licensePlateCol = headers.indexOf('LicensePlate');
+    const statusCol = headers.indexOf('Status');
+    const userIdCol = headers.indexOf('UserID');
+
+    if (licensePlateCol === -1 || statusCol === -1 || userIdCol === -1) {
+      throw new Error('Required columns "LicensePlate", "Status", and "UserID" not found!');
+    }
+
+    // Parse all data from sheet
+    const allData = [];
+    for (let i = 1; i < values.length; i++) {
+      const row = values[i];
+      const licensePlate = String(row[licensePlateCol] || '').trim();
+      const status = String(row[statusCol] || '').trim();
+      const userId = String(row[userIdCol] || '').trim();
+
+      if (licensePlate) {
+        allData.push({
+          licensePlate: licensePlate,
+          status: status,
+          userId: userId,
+          rowIndex: i + 1,
+          lastUpdated: new Date().toISOString()
+        });
+      }
+    }
+
+    Logger.log(`Fetched ${allData.length} records from sheet`);
+
+    // Apply cleaning logic
+    const cleanedData = cleanDuplicates(allData);
+
+    Logger.log(`Cleaned data: ${allData.length} -> ${cleanedData.length} records`);
+
+    // Prepare Firebase data structure
+    const firebaseData = {
+      validations: cleanedData,
+      metadata: {
+        totalRecords: cleanedData.length,
+        lastSync: new Date().toISOString(),
+        lastModified: Date.now(),
+        source: 'google-sheets-force-sync'
+      }
+    };
+
+    // Write to Firebase (complete wipe and replace)
+    writeToFirebase(firebaseData);
+
+    Logger.log('Force sync with cleaning completed successfully!');
+
+    // Show success message in Google Sheets UI
+    const ui = SpreadsheetApp.getUi();
+    ui.alert(
+      'Sync Complete',
+      `Successfully synced to Firebase!\n\n` +
+      `Original records: ${allData.length}\n` +
+      `After cleaning: ${cleanedData.length}\n` +
+      `Removed duplicates: ${allData.length - cleanedData.length}`,
+      ui.ButtonSet.OK
+    );
+
+  } catch (error) {
+    Logger.log(`ERROR: ${error.message}`);
+    SpreadsheetApp.getUi().alert('Error: ' + error.message);
+    throw error;
+  }
+}
+
+/**
+ * Clean duplicates using same logic as admin panel
+ * Keeps one record per license plate, preferring:
+ * 1. Valid status over invalid
+ * 2. Permanent (직원차량) over temporary (유효)
+ * 3. Newer records over older (by lastUpdated timestamp)
+ */
+function cleanDuplicates(allData) {
+  const plateMap = new Map();
+
+  allData.forEach(record => {
+    const plate = record.licensePlate;
+    if (!plate) return; // Skip records without a license plate
+
+    const existing = plateMap.get(plate);
+    const isPermanent = record.status === '직원차량';
+    const isValid = record.status === '유효' || isPermanent;
+
+    if (!existing) {
+      plateMap.set(plate, record);
+    } else {
+      const existingIsPermanent = existing.status === '직원차량';
+      const existingIsValid = existing.status === '유효' || existingIsPermanent;
+
+      // Prefer valid over invalid
+      if (isValid && !existingIsValid) {
+        plateMap.set(plate, record);
+      }
+      // If both permanent, prefer newer
+      else if (isPermanent && existingIsPermanent) {
+        if (new Date(record.lastUpdated) > new Date(existing.lastUpdated)) {
+          plateMap.set(plate, record);
+        }
+      }
+    }
+  });
+
+  return Array.from(plateMap.values());
+}
