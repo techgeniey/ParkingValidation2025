@@ -79,10 +79,11 @@ const firebaseConfig = {
 
 ### 7. Configure HTML App
 
-1. Open `parking-validation.html`
-2. Find the `firebaseConfig` object (around line 280)
+1. Open `index.html`
+2. Find the `firebaseConfig` object (around line 504)
 3. Replace it with YOUR Firebase config from Step 3
 4. Save the file
+5. Repeat for `my-submissions.html` and `admin/script.js` if using those features
 
 ### 8. Security Rules (Production)
 
@@ -106,10 +107,11 @@ This allows public read (for the app) but prevents unauthorized writes.
 
 ## Testing
 
-1. Open `parking-validation.html` in browser
-2. Submit a test form entry in Google Forms
-3. Watch the HTML app update **instantly** without refresh
-4. Open browser console (F12) to see Firebase connection status
+1. Open `index.html` in browser
+2. Sign in with Google (must be an authorized email in Firebase Rules)
+3. Submit a test form entry in Google Forms
+4. Watch the HTML app update **instantly** without refresh
+5. Open browser console (F12) to see Firebase connection status
 
 ## How It Works
 

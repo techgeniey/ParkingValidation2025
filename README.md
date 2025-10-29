@@ -29,10 +29,12 @@ When a form is submitted:
 
 ## Files
 
-- `index.html` - Main web app with Firebase integration
+- `index.html` - Main parking validation app with Firebase real-time sync
+- `my-submissions.html` - User-specific submissions view
+- `admin/index.html` - Admin panel for data cleanup
 - `apps-script.js` - Google Apps Script for Sheet → Firebase sync
 - `SETUP.md` - Detailed setup instructions
-- `parking-validation.html` - (Legacy polling version - not needed)
+- `AUTH_README.md` - Authentication and security guide
 
 ## Quick Start
 
