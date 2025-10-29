@@ -12,13 +12,14 @@ The application uses **Firebase Authentication** with **Google Sign-In** to prot
 
 ## Authorized Users
 
-Only the following Google accounts have access:
+Access is controlled via **Firebase Security Rules** (server-side), not client code.
 
-- `taejin.yoon@gmail.com`
-- `finespaceinc@gmail.com`
-- `jproltd@gmail.com`
+Example authorized users:
+- `admin@example.com`
+- `user1@example.com`
+- `user2@example.com`
 
-To add or remove users, edit the `ALLOWED_EMAILS` array in `index.html` (around line 513).
+To add or remove users, update the Firebase Security Rules in Firebase Console → Realtime Database → Rules.
 
 ---
 
@@ -42,9 +43,10 @@ To add or remove users, edit the `ALLOWED_EMAILS` array in `index.html` (around 
 
 ### Security:
 
-- **Client-side check:** Email whitelist in the HTML
-- **Database security:** Firebase Rules require authentication
-- **Data protection:** Unauthenticated users cannot access database even if they bypass HTML
+- **Server-side authorization:** Email whitelist enforced by Firebase Security Rules
+- **Database security:** Firebase Rules check authentication AND email address
+- **Data protection:** Impossible to bypass - authorization is server-side only
+- **Privacy:** No email addresses exposed in public client code
 
 ---
 
@@ -67,7 +69,7 @@ Follow these steps to configure Firebase Authentication and Security Rules:
 
 ### **Step 2: Configure Firebase Realtime Database Security Rules**
 
-Protect your database so only authenticated users can read data:
+Protect your database with email-based authorization:
 
 1. Click **Realtime Database** in the left sidebar
 2. Click the **Rules** tab at the top
@@ -77,16 +79,27 @@ Protect your database so only authenticated users can read data:
 {
   "rules": {
     "parkingValidation": {
-      ".read": "auth != null",
-      ".write": false
+      ".read": "auth != null && (
+        auth.token.email == 'admin@example.com' ||
+        auth.token.email == 'user1@example.com' ||
+        auth.token.email == 'user2@example.com'
+      )",
+      ".write": "auth != null && (
+        auth.token.email == 'admin@example.com'
+      )",
+      "validations": {
+        ".indexOn": ["userId"]
+      }
     }
   }
 }
 ```
 
 **What these rules do:**
-- `.read`: Only authenticated users can read parking validation data
-- `.write`: No one can write through the web app (only Apps Script can write)
+- `.read`: Only specific authenticated emails can read data
+- `.write`: Only admin emails can write (for admin panel data cleanup)
+- `.indexOn`: Creates index for efficient userId queries
+- **Replace example emails with your actual authorized email addresses**
 
 4. Click **Publish** to apply the rules
 
@@ -198,39 +211,41 @@ Firebase Hosting domain is pre-authorized automatically.
 
 ### Email is whitelisted but access denied
 
-**Problem:** Email not matching exactly (case-sensitive, spaces, etc.)
+**Problem:** Email not matching exactly in Firebase Rules (case-sensitive, spaces, etc.)
 
 **Solution:**
 - Check the exact email in Firebase Console → Authentication → Users
-- Update the `ALLOWED_EMAILS` array in `index.html` to match exactly
+- Update the Firebase Security Rules in Realtime Database → Rules to match exactly
 
 ---
 
 ## Managing Authorized Users
 
+Authorization is managed through **Firebase Security Rules** (server-side), not client code.
+
 ### To add a new user:
 
-1. Open `index.html`
-2. Find the `ALLOWED_EMAILS` array (around line 513)
-3. Add the new email:
+1. Go to Firebase Console → Realtime Database → Rules
+2. Add the new email to the `.read` rule:
 
-```javascript
-const ALLOWED_EMAILS = [
-    'taejin.yoon@gmail.com',
-    'finespaceinc@gmail.com',
-    'jproltd@gmail.com',
-    'newemail@example.com'  // Add here
-];
+```json
+".read": "auth != null && (
+  auth.token.email == 'admin@example.com' ||
+  auth.token.email == 'user1@example.com' ||
+  auth.token.email == 'user2@example.com' ||
+  auth.token.email == 'newuser@example.com'  // Add here
+)",
 ```
 
-4. Save and redeploy
+3. Click **Publish**
+4. New user can access immediately (no code deployment needed)
 
 ### To remove a user:
 
-1. Open `index.html`
-2. Find the `ALLOWED_EMAILS` array
-3. Remove the email from the list
-4. Save and redeploy
+1. Go to Firebase Console → Realtime Database → Rules
+2. Remove the email line from the `.read` rule
+3. Click **Publish**
+4. User access is revoked immediately
 
 ---
 
@@ -238,27 +253,30 @@ const ALLOWED_EMAILS = [
 
 ### Current Implementation:
 
-✅ Email whitelist in code
-✅ Firebase Authentication required
-✅ Database rules enforce authentication
-✅ No write access from web app
+✅ **Server-side authorization** - Email whitelist enforced by Firebase Security Rules
+✅ **Firebase Authentication** required
+✅ **No PII exposure** - Email addresses hidden from client code
+✅ **Impossible to bypass** - Authorization enforced server-side only
+✅ **Admin-only write access** - Only specific emails can modify data
 
 ### Additional Security (Optional):
 
 For even stronger security, you can implement:
 
-1. **Server-side email validation:**
-   - Use Firebase Cloud Functions
-   - Validate email against a database-stored whitelist
+1. **Domain restrictions:**
+   - Restrict to `@yourcompany.com` emails only in Firebase Rules:
+   ```json
+   ".read": "auth != null && auth.token.email.matches(/.*@yourcompany\\.com$/)"
+   ```
 
-2. **Domain restrictions:**
-   - Restrict to `@yourcompany.com` emails only
-
-3. **Session timeout:**
+2. **Session timeout:**
    - Implement automatic logout after inactivity
 
-4. **Audit logging:**
-   - Log all access attempts to Firebase
+3. **Audit logging:**
+   - Use Firebase Cloud Functions to log all access attempts
+
+4. **Multi-factor authentication:**
+   - Enable in Firebase Console → Authentication → Sign-in method
 
 ---
 
@@ -269,17 +287,25 @@ User Browser
     ↓
 Google Sign-In Popup
     ↓
-Firebase Authentication
+Firebase Authentication (user authenticated)
     ↓
-Email Whitelist Check (client-side)
+User requests data from Firebase Realtime Database
     ↓
-    ├─ ✅ Authorized → Load App
+Firebase Security Rules Check (SERVER-SIDE)
+    ├─ Check: auth != null?
+    ├─ Check: email in whitelist?
+    ↓
+    ├─ ✅ AUTHORIZED (both checks pass)
     │       ↓
-    │   Firebase Realtime Database (protected by auth rules)
+    │   Return Parking Validation Data
     │       ↓
-    │   Display Parking Validation Data
+    │   Display in Browser
     │
-    └─ ❌ Unauthorized → Show Error & Sign Out
+    └─ ❌ PERMISSION_DENIED (any check fails)
+            ↓
+        Error returned to browser
+            ↓
+        User sees "Access denied" → Signed out
 ```
 
 ---
@@ -298,7 +324,8 @@ If you encounter issues:
 
 ## File Locations
 
-- **Authentication Code:** `index.html` (lines 750-830)
-- **Email Whitelist:** `index.html` (lines 513-517)
-- **Firebase Config:** `index.html` (lines 494-502)
+- **Authentication Code:** `index.html` (Firebase Auth integration)
+- **Email Whitelist:** Firebase Console → Realtime Database → Rules (server-side)
+- **Firebase Config:** `index.html`, `admin/script.js`, `my-submissions.html`
 - **This Guide:** `AUTH_README.md`
+- **Admin Panel:** `admin/index.html` and `admin/script.js`
