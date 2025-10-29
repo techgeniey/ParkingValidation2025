@@ -517,15 +517,6 @@
         const auth = getAuth(app);
         const googleProvider = new GoogleAuthProvider();
 
-        // ============================================
-        // EMAIL WHITELIST - Authorized Users Only
-        // ============================================
-        const ALLOWED_EMAILS = [
-            'taejin.yoon@gmail.com',
-            'finespaceinc@gmail.com',
-            'jproltd@gmail.com'
-        ];
-
         // Global state
         let allData = [];
         let isConnected = false;
@@ -611,6 +602,14 @@
                 }
             }, (error) => {
                 console.error('Firebase listener error:', error);
+
+                // Handle permission denied errors
+                if (error.code === 'PERMISSION_DENIED') {
+                    alert('접근 권한이 없습니다.\n\n허가된 계정으로 로그인해주세요.');
+                    handleSignOut();
+                    return;
+                }
+
                 updateConnectionStatus('disconnected', '연결 끊김');
                 showError('Firebase 연결 오류: ' + error.message);
                 showLoading(false);
@@ -770,16 +769,11 @@
 
             // Listen to authentication state changes
             onAuthStateChanged(auth, (user) => {
-                if (user && ALLOWED_EMAILS.includes(user.email)) {
-                    // User is signed in and authorized
+                if (user) {
+                    // User is signed in - Firebase rules will enforce authorization
                     console.log('User signed in:', user.email);
                     showApp(user);
                     setupFirebaseListeners(); // Initialize data listeners
-                } else if (user) {
-                    // User is signed in but NOT authorized
-                    console.warn('Unauthorized user attempted access:', user.email);
-                    alert('접근 권한이 없습니다.\n\n허가된 계정으로 로그인해주세요.');
-                    handleSignOut();
                 } else {
                     // User is signed out
                     console.log('User signed out');

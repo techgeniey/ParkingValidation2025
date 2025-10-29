@@ -15,11 +15,6 @@ const firebaseConfig = {
     appId: "1:574605771807:web:c746340352b61004e2c12a"
 };
 
-const ADMIN_EMAILS = [
-    'taejin.yoon@gmail.com',
-    'finespaceinc@gmail.com',
-];
-
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
@@ -44,13 +39,11 @@ let issuesFound = [];
 // AUTHENTICATION
 // ===========================================
 onAuthStateChanged(auth, (user) => {
-    if (user && ADMIN_EMAILS.includes(user.email)) {
+    if (user) {
+        // User is signed in - Firebase rules will enforce admin authorization
         showApp(user);
     } else {
-        if (user) {
-            alert('접근 권한이 없습니다. 관리자 계정으로 로그인해주세요.');
-            signOut(auth);
-        }
+        // User is signed out
         showLogin();
     }
 });
@@ -85,7 +78,7 @@ scanBtn.addEventListener('click', async () => {
     try {
         const snapshot = await get(ref(database, 'parkingValidation/validations'));
         allData = snapshot.val() || [];
-        
+
         if (!Array.isArray(allData)) {
             allData = Object.values(allData);
         }
@@ -94,6 +87,14 @@ scanBtn.addEventListener('click', async () => {
         displayIssues();
     } catch (error) {
         console.error('Error fetching data:', error);
+
+        // Handle permission denied errors
+        if (error.code === 'PERMISSION_DENIED') {
+            alert('접근 권한이 없습니다. 관리자 계정으로 로그인해주세요.');
+            signOut(auth);
+            return;
+        }
+
         results.innerHTML = '<p style="color: red;">데이터를 불러오는 중 오류가 발생했습니다.</p>';
     } finally {
         loading.style.display = 'none';
@@ -125,6 +126,14 @@ cleanupBtn.addEventListener('click', async () => {
         cleanupBtn.disabled = true;
     } catch (error) {
         console.error('Error cleaning data:', error);
+
+        // Handle permission denied errors
+        if (error.code === 'PERMISSION_DENIED') {
+            alert('접근 권한이 없습니다. 관리자 계정으로 로그인해주세요.');
+            signOut(auth);
+            return;
+        }
+
         results.innerHTML = '<p style="color: red;">데이터 정리 중 오류가 발생했습니다.</p>';
     } finally {
         loading.style.display = 'none';
