@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>팔탄센트럴 주차 등록 안내</title>
+    <!-- Tailwind CSS 로드 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Inter 폰트 로드 (Tailwind 기본) */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+        }
+        /* Noto Sans KR 폰트 (한국어용) */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="container mx-auto max-w-2xl p-5 min-h-screen">
+        <!-- 헤더 -->
+        <header class="py-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-800">팔탄센트럴</h1>
+            <h2 class="text-4xl font-bold text-blue-600 mt-1">주차 차량 등록 안내</h2>
+            <p class="text-lg text-gray-600 mt-3">입주 업체를 위한 주차 등록 및 확인 페이지입니다.</p>
+        </header>
+
+        <!-- 메인 컨텐츠 -->
+        <main class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
+
+            <!-- 1. 신규 차량 등록 -->
+            <section>
+                <h3 class="text-2xl font-semibold text-gray-900 border-b-2 border-blue-500 pb-2">1. 신규 차량 등록</h3>
+                <p class="mt-4 text-gray-700">
+                    직원 또는 방문객 차량 등록은 Google Form을 통해 진행됩니다.
+                    <br>
+                    <strong class="text-red-600">반드시 사전에 관리사무소에 등록한 업체의 Google 계정으로 로그인</strong>해야 양식이 보입니다.
+                </p>
+                <a href="#{GOOGLE_FORM_LINK}" 
+                   target="_blank" 
+                   class="mt-5 inline-block w-full text-center bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow hover:bg-blue-700 transition duration-300">
+                    차량 등록하기 (Google Form)
+                </a>
+            </section>
+
+            <!-- 2. 등록 내역 확인 -->
+            <section class="mt-10">
+                <h3 class="text-2xl font-semibold text-gray-900 border-b-2 border-gray-300 pb-2">2. 등록 내역 확인</h3>
+                <p class="mt-4 text-gray-700">
+                    이미 등록된 차량 내역을 확인합니다.
+                    <br>
+                    <strong class="text-red-600">차량 등록 시 사용한 것과 동일한 Google 계정으로 로그인</strong>해야 합니다.
+                </p>
+                <a href="#{CONFIRMATION_PAGE_LINK}" 
+                   target="_blank" 
+                   class="mt-5 inline-block w-full text-center bg-gray-700 text-white font-bold py-3 px-6 rounded-lg shadow hover:bg-gray-800 transition duration-300">
+                    등록 내역 확인하기
+                </a>
+            </section>
+
+            <!-- 3. 주요 안내 사항 -->
+            <section class="mt-10">
+                <h3 class="text-2xl font-semibold text-gray-900 border-b-2 border-gray-300 pb-2">3. 주요 안내 사항</h3>
+                <ul class="mt-4 list-disc list-inside text-gray-700 space-y-3">
+                    <li>
+                        <strong>신규 등록:</strong>
+                        추가 차량 등록이 필요한 경우, 상단의 '차량 등록하기' 링크를 이용해 주십시오.
+                    </li>
+                    <li>
+                        <strong>오류 / 삭제 요청:</strong>
+                        '등록 내역 확인하기' 페이지에서 확인 후, 정보에 오류나 삭제가 필요한 경우 등록 시 사용한 이메일 계정으로 관리사무소 이메일(<strong class="text-gray-900">jpdmlimited@gmail.com</strong>)로 회신(문의) 바랍니다.
+                    </li>
+                    <li>
+                        <strong>문의 사항:</strong>
+                        기타 모든 문의는 아래 연락처로 연락 바랍니다.
+                        <ul class="ml-6 mt-2 text-gray-800">
+                            <li><strong>이메일:</strong> jpdmlimited@gmail.com</li>
+                            <li><strong>연락처:</strong> 010-5505-1266</li>
+                        </ul>
+                    </li>
+                </ul>
+            </section>
+
+        </main>
+
+        <!-- 푸터 -->
+        <footer class="text-center py-8 text-gray-500">
+            &copy; 2025 팔탄센트럴 관리사무소.
+        </footer>
+    </div>
+
+</body>
+</html>
+

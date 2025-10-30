@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주차 데이터 관리자</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>주차 데이터 관리자</h1>
+
+        <!-- Login Screen -->
+        <div id="loginScreen" class="login-screen">
+            <h2>로그인 필요</h2>
+            <p>데이터를 관리하려면 관리자 계정으로 로그인하세요.</p>
+            <button id="googleSignInBtn" class="google-signin-btn">Google로 로그인</button>
+        </div>
+
+        <!-- App Content -->
+        <div id="appContent" class="app-content">
+            <div class="user-info">
+                <span id="userEmail"></span>
+                <button id="logoutBtn" class="logout-btn">로그아웃</button>
+            </div>
+
+            <h2>데이터 무결성 검사</h2>
+            <p>중복되거나 충돌하는 레코드를 검사하고 정리합니다.</p>
+            <button id="scanBtn">문제 검사</button>
+            <button id="cleanupBtn" disabled>데이터 정리</button>
+            
+            <div id="loading" style="display: none;"><div class="spinner"></div></div>
+            <div id="results" class="results"></div>
+        </div>
+    </div>
+
+    <script src="script.js" type="module"></script>
+</body>
+</html>
