@@ -37,7 +37,9 @@
                     <br>
                     <strong class="text-red-600">반드시 사전에 관리사무소에 등록한 업체의 Google 계정으로 로그인</strong>해야 양식이 보입니다.
                 </p>
-                <a href="#{GOOGLE_FORM_LINK}" 
+                <!-- GOOGLE_FORM_LINK가 여기에 적용됩니다 -->
+                <a id="google-form-link"
+                   href="#" 
                    target="_blank" 
                    class="mt-5 inline-block w-full text-center bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow hover:bg-blue-700 transition duration-300">
                     차량 등록하기 (Google Form)
@@ -52,7 +54,9 @@
                     <br>
                     <strong class="text-red-600">차량 등록 시 사용한 것과 동일한 Google 계정으로 로그인</strong>해야 합니다.
                 </p>
-                <a href="#{CONFIRMATION_PAGE_LINK}" 
+                <!-- CONFIRMATION_PAGE_LINK가 여기에 적용됩니다 -->
+                <a id="confirmation-link"
+                   href="#" 
                    target="_blank" 
                    class="mt-5 inline-block w-full text-center bg-gray-700 text-white font-bold py-3 px-6 rounded-lg shadow hover:bg-gray-800 transition duration-300">
                     등록 내역 확인하기
@@ -89,6 +93,26 @@
             &copy; 2025 팔탄센트럴 관리사무소.
         </footer>
     </div>
+
+    <!-- 스크립트: 링크 상수를 정의하고 적용합니다 -->
+    <script>
+        // --- 여기에서 링크를 수정하세요 ---
+        const GOOGLE_FORM_LINK = "https://docs.google.com/forms/d/e/1FAIpQLSf502wPh74-SfP2R0SDbcf2-Z8Or84zlnOkbMuxAf_3fyOpHg/viewform?usp=sharing&ouid=110586948604302632963";
+        const CONFIRMATION_PAGE_LINK = "https://techgeniey.github.io/ParkingValidation2025/tenant/confirmation.html";
+        // ---------------------------------
+
+        // 'id'를 기반으로 링크를 설정합니다.
+        // 이 스크립트는 body의 끝에 있으므로, DOM 요소가 로드된 후입니다.
+        const formLink = document.getElementById('google-form-link');
+        const confirmationLink = document.getElementById('confirmation-link');
+
+        if (formLink) {
+            formLink.href = GOOGLE_FORM_LINK;
+        }
+        if (confirmationLink) {
+            confirmationLink.href = CONFIRMATION_PAGE_LINK;
+        }
+    </script>
 
 </body>
 </html>
