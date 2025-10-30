@@ -160,12 +160,12 @@
         }
 
         .result-card {
-            background: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 8px;
             padding: 10px 15px;
             margin-bottom: 6px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            border-left: 4px solid #ccc;
+            border-left: 4px solid rgba(255, 255, 255, 0.5);
             transition: all 0.2s ease;
             animation: slideIn 0.2s ease;
             display: flex;
@@ -190,13 +190,11 @@
         }
 
         .result-card.valid {
-            border-left-color: #2196F3;
-            background: rgba(33, 150, 243, 0.03);
+            border-left-color: #4fc3f7;
         }
 
         .result-card.invalid {
-            border-left-color: #f44336;
-            background: rgba(244, 67, 54, 0.03);
+            border-left-color: #ff7961;
         }
 
         .result-card.new-entry {
@@ -211,7 +209,7 @@
         .license-plate {
             font-size: 18px;
             font-weight: 600;
-            color: #333;
+            color: white;
             flex: 1;
         }
 
