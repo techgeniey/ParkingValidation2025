@@ -131,7 +131,7 @@ function cleanDuplicates(allData) {
 /**
  * Main function to sync Google Sheet data to Firebase
  * Triggered on form submit or can be run manually
- * Automatically cleans duplicates before syncing
+ * Filters to only valid records (유효/영구), then cleans duplicates before syncing
  */
 function syncToFirebase() {
   try {
@@ -198,9 +198,21 @@ function syncToFirebase() {
     Logger.log(`Processed ${validations.length} validation records`);
     traceLog(`\nTotal records read from spreadsheet: ${validations.length}`);
 
+    // Filter to only valid records (유효 or 영구) - ignore 무효
+    const validOnly = validations.filter(record => {
+      const isValidStatus = record.status === '유효' || record.status === '영구';
+      if (!isValidStatus) {
+        traceLog(`Filtering out invalid record:`, record);
+      }
+      return isValidStatus;
+    });
+
+    Logger.log(`After filtering: ${validations.length} -> ${validOnly.length} records (removed ${validations.length - validOnly.length} invalid)`);
+    traceLog(`\nValid records after filtering: ${validOnly.length}`);
+
     // Clean duplicates before syncing
-    const cleanedData = cleanDuplicates(validations);
-    Logger.log(`After cleaning: ${validations.length} -> ${cleanedData.length} records (removed ${validations.length - cleanedData.length} duplicates)`);
+    const cleanedData = cleanDuplicates(validOnly);
+    Logger.log(`After cleaning: ${validOnly.length} -> ${cleanedData.length} records (removed ${validOnly.length - cleanedData.length} duplicates)`);
 
     // Prepare the data structure for Firebase
     const firebaseData = {
@@ -453,7 +465,7 @@ function onOpen() {
 
 /**
  * Force sync from Google Sheets with data cleaning
- * Removes duplicates and resolves conflicts before syncing to Firebase
+ * Filters to only valid records (유효/영구), removes duplicates and resolves conflicts
  * COMPLETELY WIPES Firebase and replaces with cleaned Google Sheets data
  */
 function forceSyncWithCleaning() {
@@ -517,10 +529,22 @@ function forceSyncWithCleaning() {
     Logger.log(`Fetched ${allData.length} records from sheet`);
     traceLog(`\nTotal records read from spreadsheet: ${allData.length}`);
 
-    // Apply cleaning logic
-    const cleanedData = cleanDuplicates(allData);
+    // Filter to only valid records (유효 or 영구) - ignore 무효
+    const validOnly = allData.filter(record => {
+      const isValidStatus = record.status === '유효' || record.status === '영구';
+      if (!isValidStatus) {
+        traceLog(`Filtering out invalid record:`, record);
+      }
+      return isValidStatus;
+    });
 
-    Logger.log(`Cleaned data: ${allData.length} -> ${cleanedData.length} records`);
+    Logger.log(`After filtering: ${allData.length} -> ${validOnly.length} records (removed ${allData.length - validOnly.length} invalid)`);
+    traceLog(`\nValid records after filtering: ${validOnly.length}`);
+
+    // Apply cleaning logic
+    const cleanedData = cleanDuplicates(validOnly);
+
+    Logger.log(`Cleaned data: ${validOnly.length} -> ${cleanedData.length} records`);
 
     // Prepare Firebase data structure
     const firebaseData = {
@@ -548,8 +572,9 @@ function forceSyncWithCleaning() {
       'Sync Complete',
       `Successfully synced to Firebase!\n\n` +
       `Original records: ${allData.length}\n` +
+      `Valid only (유효/영구): ${validOnly.length}\n` +
       `After cleaning: ${cleanedData.length}\n` +
-      `Removed duplicates: ${allData.length - cleanedData.length}`,
+      `Removed: ${allData.length - cleanedData.length} (${allData.length - validOnly.length} invalid + ${validOnly.length - cleanedData.length} duplicates)`,
       ui.ButtonSet.OK
     );
 
